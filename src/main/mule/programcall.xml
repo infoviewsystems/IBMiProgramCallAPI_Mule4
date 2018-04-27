@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:as400="http://www.mulesoft.org/schema/mule/as400"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd 
+http://www.mulesoft.org/schema/mule/as400 http://www.mulesoft.org/schema/mule/as400/current/mule-as400.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="programcall-httpListenerConfig">
+		<http:listener-connection host="0.0.0.0"
+			port="8081" />
+	</http:listener-config>
+	<as400:config name="AS400_Config" doc:name="AS400 Config"
+		doc:id="0629607e-c314-48da-a73c-5f51d7cbd91f">
+		<as400:config-connection endpoint="${as400.endpoint}"
+			userid="${as400.user}" password="${as400.pwd}">
+			<pooling-profile initialisationPolicy="INITIALISE_ALL" />
+		</as400:config-connection>
+	</as400:config>
+
+	<apikit:config name="programcall-config" raml="programcall.raml"
+		outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<configuration-properties doc:name="Configuration properties" doc:id="7fd8baf6-1943-491f-ac3b-bb7c1d6e9209" file="app.properties" />
+	<flow name="programcall-main">
+		<http:listener config-ref="programcall-httpListenerConfig"
+			path="/api/*">
+			<http:response statusCode="#[vars.httpStatus default 200]">
+				<http:headers>#[vars.outboundHeaders default {}]</http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.httpStatus default 500]">
+				<http:body>#[payload]</http:body>
+				<http:headers>#[vars.outboundHeaders default {}]</http:headers>
+			</http:error-response>
+		</http:listener>
+		<apikit:router config-ref="programcall-config" />
+		<error-handler>
+			<on-error-propagate type="APIKIT:BAD_REQUEST">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">400
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_FOUND">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">404
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">405
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">406
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">415
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">501
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="programcall-console">
+		<http:listener config-ref="programcall-httpListenerConfig"
+			path="/console/*">
+			<http:response statusCode="#[vars.httpStatus default 200]">
+				<http:headers>#[vars.outboundHeaders default {}]</http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.httpStatus default 500]">
+				<http:body>#[payload]</http:body>
+				<http:headers>#[vars.outboundHeaders default {}]</http:headers>
+			</http:error-response>
+		</http:listener>
+		<apikit:console config-ref="programcall-config" />
+		<error-handler>
+			<on-error-propagate type="APIKIT:NOT_FOUND">
+				<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+					xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus">404
+						</ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="post:\orders:application\json:programcall-config">
+		<ee:transform doc:name="Transform Message" doc:id="5e7da801-e965-43b7-a22f-3721f31a3777" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<as400:program-call-processor doc:name="Program call processor" doc:id="2061e9ef-7f90-4c6f-9760-98421962884b" config-ref="AS400_Config" programName="postorders" programLibrary="muledemos">
+			<as400:parameters>
+                <as400:parameter parameterName="orderID" dataType="PACKED" length="8" usage="INOUT" parmValue="#[payload.orderID]" />
+                <as400:parameter parameterName="orderLines" dataType="PACKED" length="4" usage="INOUT" parmValue="#[payload.orderLines]" />
+                <as400:parameter parameterName="orderLinesIn" dataType="STRUCTURE" usage="INOUT" count="10" parmValue="#[payload.orderItemsIn]"> 
+                    <as400:data-structure-elements>
+                        <as400:parameter parameterName="item" dataType="STRING" length="35" usage="INOUT" />
+                        <as400:parameter parameterName="qty" dataType="PACKED" length="11" usage="INOUT" decimalPositions="3" />
+                        <as400:parameter parameterName="price" dataType="PACKED" length="14" usage="INOUT" decimalPositions="4" />
+                    </as400:data-structure-elements>
+                </as400:parameter>
+                <as400:parameter parameterName="orderLinesOut" dataType="STRUCTURE" usage="OUT" count="10">
+                    <as400:data-structure-elements>
+                        <as400:parameter parameterName="item" dataType="STRING" length="35" usage="OUT"/>
+                        <as400:parameter parameterName="qty" dataType="PACKED" length="11" usage="OUT" decimalPositions="3" />
+                        <as400:parameter parameterName="price" dataType="PACKED" length="14" usage="OUT" decimalPositions="4" />
+                    </as400:data-structure-elements>
+                </as400:parameter>
+            </as400:parameters>			
+		</as400:program-call-processor>
+		<ee:transform doc:name="Transform Message" doc:id="3bfe2aaf-6aa2-4ee2-a1f5-dccd4f1bfc61" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	orderLines : payload.orderLines,
+	orderID: payload.orderID,
+	orderItemsOut: payload.orderLinesOut filter $.item != ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
