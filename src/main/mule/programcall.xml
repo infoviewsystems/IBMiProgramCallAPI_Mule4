@@ -10,12 +10,12 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	<http:listener-config name="programcall-httpListenerConfig">
 		<http:listener-connection host="0.0.0.0"
 			port="8081" />
-	</http:listener-config>
-	<as400:config name="AS400_Config" doc:name="AS400 Config"
+	</http:listener-config> 
+	<as400:config name="AS400_Config" doc:name="AS400 Config" 
 		doc:id="0629607e-c314-48da-a73c-5f51d7cbd91f">
 		<as400:config-connection endpoint="${as400.endpoint}"
-			userid="${as400.user}" password="${as400.pwd}">
-			<pooling-profile initialisationPolicy="INITIALISE_ALL" />
+			userid="${as400.user}" password="${as400.pwd}" libraryList="dkuznetsov,muledemos">
+			<!--  pooling-profile maxWait="3000" minEvictionMillis="100000" evictionCheckIntervalMillis="30000"/-->
 		</as400:config-connection>
 	</as400:config>
 
@@ -23,8 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
 	<configuration-properties doc:name="Configuration properties" doc:id="7fd8baf6-1943-491f-ac3b-bb7c1d6e9209" file="app.properties" />
 	<flow name="programcall-main">
-		<http:listener config-ref="programcall-httpListenerConfig"
-			path="/api/*">
+		<http:listener config-ref="programcall-httpListenerConfig" path="/api/*">
 			<http:response statusCode="#[vars.httpStatus default 200]">
 				<http:headers>#[vars.outboundHeaders default {}]</http:headers>
 			</http:response>
@@ -166,7 +165,7 @@ output application/java
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<as400:program-call-processor doc:name="Program call processor" doc:id="2061e9ef-7f90-4c6f-9760-98421962884b" config-ref="AS400_Config" programName="postorders" programLibrary="muledemos">
+		<as400:program-call-processor doc:name="Program call processor" doc:id="2061e9ef-7f90-4c6f-9760-98421962884b" config-ref="AS400_Config" programName="postordsp" programLibrary="muledemos" procedureName="POSTORDERS">
 			<as400:parameters>
                 <as400:parameter parameterName="orderID" dataType="PACKED" length="8" usage="INOUT" parmValue="#[payload.orderID]" />
                 <as400:parameter parameterName="orderLines" dataType="PACKED" length="4" usage="INOUT" parmValue="#[payload.orderLines]" />
@@ -179,9 +178,9 @@ payload]]></ee:set-payload>
                 </as400:parameter>
                 <as400:parameter parameterName="orderLinesOut" dataType="STRUCTURE" usage="OUT" count="10">
                     <as400:data-structure-elements>
-                        <as400:parameter parameterName="item" dataType="STRING" length="35" usage="OUT"/>
-                        <as400:parameter parameterName="qty" dataType="PACKED" length="11" usage="OUT" decimalPositions="3" />
-                        <as400:parameter parameterName="price" dataType="PACKED" length="14" usage="OUT" decimalPositions="4" />
+                        <as400:parameter parameterName="item" dataType="STRING" length="35" usage="INOUT"/>
+                        <as400:parameter parameterName="qty" dataType="PACKED" length="11" usage="INOUT" decimalPositions="3" />
+                        <as400:parameter parameterName="price" dataType="PACKED" length="14" usage="INOUT" decimalPositions="4" />
                     </as400:data-structure-elements>
                 </as400:parameter>
             </as400:parameters>			

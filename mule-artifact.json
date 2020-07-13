@@ -1,26 +1,3 @@
 {
-  "configs": [
-    "programcall.xml"
-  ],
-  "secureProperties": [],
-  "redeploymentEnabled": true,
-  "name": "testprogramcall",
-  "minMuleVersion": "4.1.1",
-  "requiredProduct": "MULE_EE",
-  "classLoaderModelLoaderDescriptor": {
-    "id": "mule",
-    "attributes": {
-      "exportedResources": [
-        "api\\examples\\orderRequest.json",
-        "api\\examples\\orderResponse.json",
-        "api\\programcall.raml",
-        "api\\schemas\\orderRequestSchema.json",
-        "api\\schemas\\orderResponseSchema.json"
-      ]
-    }
-  },
-  "bundleDescriptorLoader": {
-    "id": "mule",
-    "attributes": {}
-  }
+  "minMuleVersion": "4.1.2"
 }
