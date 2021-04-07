@@ -14,7 +14,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	<as400:config name="AS400_Config" doc:name="AS400 Config" 
 		doc:id="0629607e-c314-48da-a73c-5f51d7cbd91f">
 		<as400:config-connection endpoint="${as400.endpoint}"
-			userid="${as400.user}" password="${as400.pwd}" libraryList="dkuznetsov,muledemos">
+			userid="${as400.user}" password="${as400.pwd}" libraryList="muledemos">
+			<pooling-profile initialisationPolicy="INITIALISE_ALL" exhaustedAction="WHEN_EXHAUSTED_WAIT"/>
 			<!--  pooling-profile maxWait="3000" minEvictionMillis="100000" evictionCheckIntervalMillis="30000"/-->
 		</as400:config-connection>
 	</as400:config>
@@ -165,7 +166,7 @@ output application/java
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<as400:program-call-processor doc:name="Program call processor" doc:id="2061e9ef-7f90-4c6f-9760-98421962884b" config-ref="AS400_Config" programName="postordsp" programLibrary="muledemos" procedureName="POSTORDERS">
+		<as400:program-call-processor doc:name="Program call processor" doc:id="2061e9ef-7f90-4c6f-9760-98421962884b" config-ref="AS400_Config" programName="postorders" programLibrary="*LIBL">
 			<as400:parameters>
                 <as400:parameter parameterName="orderID" dataType="PACKED" length="8" usage="INOUT" parmValue="#[payload.orderID]" />
                 <as400:parameter parameterName="orderLines" dataType="PACKED" length="4" usage="INOUT" parmValue="#[payload.orderLines]" />
